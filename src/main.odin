@@ -17,33 +17,57 @@ main :: proc() {
 		os.exit(1)
 	}
 
+	// Ressource initialization
 	img := rl.GenImageColor(W_WIDTH, W_HEIGHT, rl.BLACK)
 	defer rl.UnloadImage(img)
 
 	tex := rl.LoadTextureFromImage(img)
 	defer rl.UnloadTexture(tex)
 
-	pixels := make([]Color, W_WIDTH * W_HEIGHT)
-	defer delete(pixels)
-
-	a := Vec2{50, 50}
-	b := Vec2{200, 50}
-	c := Vec2{125, 125}
-	draw_tri(a, b, c, pixels, W_WIDTH, W_HEIGHT)
+	fb := make_framebuffer(W_WIDTH, W_HEIGHT)
+	defer destroy_framebuffer(&fb)
 
 	start := time.tick_now()
-	mesh, ok := load_mesh_from_obj("./objects/teapot.obj")
+	mesh, ok := load_mesh_from_obj("./objects/model.obj")
 	if !ok do return
 	defer destroy_mesh(&mesh)
 
-	fmt.printfln("loaded obj in %.2fms", time.duration_milliseconds(time.tick_since(start)))
+	fmt.printfln(
+		"loaded obj (%d verts, %d tris) in %.2fms",
+		len(mesh.verts),
+		len(mesh.tris),
+		time.duration_milliseconds(time.tick_since(start)),
+	)
+
+	// Instance creation
+	inst := make_instance(&mesh, Vec3{-0.3, 0, 0})
+
+	// Cam setup
+	cam: Cam
+	cam.target = Vec3{-3, 0, 1}
+	cam.pos = Vec3{0, 0, -1.5}
+	cam.near = 0.1
+	cam.far = 100
+	cam.fov = 90
 
 
 	rl.SetTargetFPS(30)
 	for {
 		if rl.WindowShouldClose() {break}
+		dt := rl.GetFrameTime()
 
-		rl.UpdateTexture(tex, raw_data(pixels))
+		if (rl.IsKeyDown(.SPACE)) {
+			inst.pos += dt * Vec3{0, 0, 1}
+		}
+
+		view := get_view_matrix(&cam)
+		proj := get_proj_matrix(&cam, f32(W_WIDTH) / f32(W_HEIGHT))
+		view_proj := proj * view
+
+		clear_framebuffer(&fb)
+		draw_instance(&fb, &inst, view_proj)
+
+		rl.UpdateTexture(tex, raw_data(fb.color))
 
 		rl.BeginDrawing()
 		rl.DrawTexture(tex, 0, 0, rl.WHITE)
