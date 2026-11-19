@@ -36,3 +36,8 @@ Cam :: struct {
 	near, far:   f32,
 	fov:         f32,
 }
+
+Input :: struct {
+	move_dir:   Vec3,
+	yaw, pitch: f32,
+}
