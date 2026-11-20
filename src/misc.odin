@@ -18,12 +18,12 @@ destroy_framebuffer :: proc(fb: ^Framebuffer) {
 }
 
 clear_framebuffer :: proc(fb: ^Framebuffer) {
-	slice.fill(fb.depth, max(f32))
+	slice.fill(fb.depth, 0)
 	slice.fill(fb.color, Color{0, 0, 0, 255})
 }
 
-make_instance :: proc(mesh: ^Mesh, pos: Vec3) -> MeshInstance {
-	return MeshInstance{mesh, pos, lin.matrix4_translate_f32(pos)}
+make_instance :: proc(mesh: ^Mesh, pos: Vec3, scale: f32) -> MeshInstance {
+	return MeshInstance{mesh, pos, scale, lin.matrix4_translate_f32(pos)}
 }
 
 destroy_mesh :: proc(mesh: ^Mesh) {

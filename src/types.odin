@@ -28,6 +28,7 @@ Mesh :: struct {
 MeshInstance :: struct {
 	mesh:      ^Mesh,
 	pos:       Vec3,
+	scale:     f32,
 	transform: matrix[4, 4]f32,
 }
 

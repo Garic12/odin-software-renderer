@@ -7,14 +7,14 @@ import "core:os"
 import "core:time"
 import rl "vendor:raylib"
 
-W_WIDTH :: 600
-W_HEIGHT :: 600
+W_WIDTH :: 800
+W_HEIGHT :: 800
 
 gather_input :: proc(input: ^Input, forward: Vec2) {
 	if (rl.IsKeyDown(.SPACE)) {
-		input.move_dir.z = -1
-	} else if (rl.IsKeyDown(.LEFT_SHIFT)) {
 		input.move_dir.z = 1
+	} else if (rl.IsKeyDown(.LEFT_SHIFT)) {
+		input.move_dir.z = -1
 	}
 
 	fwd := lin.vector_normalize(Vec2{forward.x, forward.y})
@@ -30,7 +30,7 @@ gather_input :: proc(input: ^Input, forward: Vec2) {
 
 	mouse_dir := rl.GetMouseDelta()
 	input.yaw -= mouse_dir.x * 0.003
-	input.pitch += mouse_dir.y * 0.003
+	input.pitch -= mouse_dir.y * 0.003
 	input.pitch = clamp(input.pitch, -math.PI / 2 + 0.01, math.PI / 2 - 0.01)
 }
 
@@ -53,28 +53,27 @@ main :: proc() {
 	fb := make_framebuffer(W_WIDTH, W_HEIGHT)
 	defer destroy_framebuffer(&fb)
 
-	start := time.tick_now()
-	mesh, ok := load_mesh_from_obj("./objects/cube.obj")
-	if !ok do return
-	defer destroy_mesh(&mesh)
+	cube, ok_cube := load_mesh_from_obj("./objects/cube.obj")
+	if !ok_cube do return
+	defer destroy_mesh(&cube)
 
-	fmt.printfln(
-		"loaded obj (%d verts, %d tris) in %.2fms",
-		len(mesh.verts),
-		len(mesh.tris),
-		time.duration_milliseconds(time.tick_since(start)),
-	)
+	plane, ok_plane := load_mesh_from_obj("./objects/plane.obj")
+	if !ok_plane do return
+	defer destroy_mesh(&plane)
 
 	// Instance creation
-	inst := make_instance(&mesh, Vec3{-2, 0, 0})
+	inst := make_instance(&cube, Vec3{-2, 0, 0}, 0.5)
+	inst2 := make_instance(&cube, Vec3{2, 0, 0}, 0.5)
+
+	inst3 := make_instance(&plane, Vec3{0, 0, -1}, 1)
 
 	// Cam setup
 	cam: Cam
 	cam.target = Vec3{-2, 0, 0}
 	cam.pos = Vec3{0, 0, 3}
 	cam.near = 0.1
-	cam.far = 100
-	cam.fov = 90
+	cam.far = 20
+	cam.fov = math.to_radians(f32(90))
 
 	input := Input{}
 
@@ -100,19 +99,37 @@ main :: proc() {
 
 		input.move_dir = Vec3{0, 0, 0}
 		gather_input(&input, forward.xy)
-		inst.pos += dt * 3 * input.move_dir
+		cam.pos += dt * 3 * input.move_dir
+		cam.target += dt * 3 * input.move_dir
 
 		view := get_view_matrix(&cam)
 		proj := get_proj_matrix(&cam, f32(W_WIDTH) / f32(W_HEIGHT))
 		view_proj := proj * view
 
 		clear_framebuffer(&fb)
+		draw_xyz(&fb, view_proj)
 		draw_instance(&fb, &inst, view_proj)
+		draw_instance(&fb, &inst2, view_proj)
+		draw_instance(&fb, &inst3, view_proj)
 
 		rl.UpdateTexture(tex, raw_data(fb.color))
 
 		rl.BeginDrawing()
 		rl.DrawTexture(tex, 0, 0, rl.WHITE)
+		rl.DrawText(
+			rl.TextFormat("Pos: %.1f, %.1f, %.1f", cam.pos.x, cam.pos.y, cam.pos.z),
+			10,
+			10,
+			20,
+			rl.WHITE,
+		)
+		rl.DrawText(
+			rl.TextFormat("Target: %.1f, %.1f, %.1f", cam.target.x, cam.target.y, cam.target.z),
+			10,
+			30,
+			20,
+			rl.WHITE,
+		)
 		rl.EndDrawing()
 	}
 }
