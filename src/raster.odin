@@ -3,6 +3,19 @@ package main
 import "core:math"
 import lin "core:math/linalg"
 
+get_screen_vert :: proc(proj_mat: ^Mat4, vert: Vec4, scale, h, w: f32) -> ScreenVert {
+	sv: ScreenVert
+
+	clip := proj_mat^ * (vert * Vec4{scale, scale, scale, 1})
+
+	inv_w := 1 / clip.w
+	ndc := clip.xyz * inv_w
+
+	sv.pos = Vec2{(ndc.x + 1) / 2 * w, (1 - ndc.y) / 2 * h}
+	sv.z = inv_w
+	return sv
+}
+
 draw_line :: proc(fb: ^Framebuffer, a, b: ScreenVert, color: Color) {
 	// Implements Bresenham’s algorithm
 	x1 := int(math.round(a.pos.x))
@@ -77,21 +90,15 @@ draw_tri :: proc(fb: ^Framebuffer, a, b, c: ScreenVert, color: Color) {
 	}
 }
 
-draw_instance :: proc(fb: ^Framebuffer, inst: ^MeshInstance, view_proj: Mat4) {
+draw_instance :: proc(fb: ^Framebuffer, inst: ^MeshInstance, view_proj: ^Mat4) {
 	inst.transform = lin.matrix4_translate_f32(inst.pos)
-	mvp := view_proj * inst.transform
+	mvp := view_proj^ * inst.transform
 
 	screen_verts := make([]ScreenVert, len(inst.mesh.verts))
 	defer delete(screen_verts)
 
 	for v, i in inst.mesh.verts {
-		clip := mvp * (Vec4{v.x, v.y, v.z, 1} * Vec4{inst.scale, inst.scale, inst.scale, 1})
-
-		inv_w := 1 / clip.w
-		ndc := clip.xyz * inv_w
-
-		screen_coords := Vec2{(ndc.x + 1) / 2 * fb.w, (1 - ndc.y) / 2 * fb.h}
-		screen_verts[i] = ScreenVert{screen_coords, inv_w}
+		screen_verts[i] = get_screen_vert(&mvp, Vec4{v.x, v.y, v.z, 1}, inst.scale, fb.w, fb.h)
 	}
 
 	for tri, i in inst.mesh.tris {
@@ -105,7 +112,7 @@ draw_instance :: proc(fb: ^Framebuffer, inst: ^MeshInstance, view_proj: Mat4) {
 	}
 }
 
-draw_xyz :: proc(fb: ^Framebuffer, view_proj: Mat4) {
+draw_xyz :: proc(fb: ^Framebuffer, view_proj: ^Mat4) {
 	verts := [6]Vec3 {
 		Vec3{2, 0, 0},
 		Vec3{0, 2, 0},
@@ -119,13 +126,7 @@ draw_xyz :: proc(fb: ^Framebuffer, view_proj: Mat4) {
 	screen_verts: [6]ScreenVert
 
 	for v, i in verts {
-		clip := view_proj * Vec4{v.x, v.y, v.z, 1}
-
-		inv_w := 1 / clip.w
-		ndc := clip.xyz * inv_w
-
-		screen_coords := Vec2{(ndc.x + 1) / 2 * fb.w, (1 - ndc.y) / 2 * fb.h}
-		screen_verts[i] = ScreenVert{screen_coords, inv_w}
+		screen_verts[i] = get_screen_vert(view_proj, Vec4{v.x, v.y, v.z, 1}, 1, fb.w, fb.h)
 	}
 
 	for i := 0; i < 3; i += 1 {

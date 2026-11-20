@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:math"
 import lin "core:math/linalg"
 import "core:os"
-import "core:time"
 import rl "vendor:raylib"
 
 W_WIDTH :: 800
@@ -78,7 +77,7 @@ main :: proc() {
 	input := Input{}
 
 
-	rl.SetTargetFPS(30)
+	rl.SetTargetFPS(60)
 	for {
 		if rl.WindowShouldClose() {break}
 		dt := rl.GetFrameTime()
@@ -107,10 +106,10 @@ main :: proc() {
 		view_proj := proj * view
 
 		clear_framebuffer(&fb)
-		draw_xyz(&fb, view_proj)
-		draw_instance(&fb, &inst, view_proj)
-		draw_instance(&fb, &inst2, view_proj)
-		draw_instance(&fb, &inst3, view_proj)
+		draw_xyz(&fb, &view_proj)
+		draw_instance(&fb, &inst, &view_proj)
+		draw_instance(&fb, &inst2, &view_proj)
+		draw_instance(&fb, &inst3, &view_proj)
 
 		rl.UpdateTexture(tex, raw_data(fb.color))
 
