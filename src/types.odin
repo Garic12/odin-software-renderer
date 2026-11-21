@@ -1,5 +1,7 @@
 package main
 
+import rl "vendor:raylib"
+
 Color :: [4]u8
 
 Vec2 :: [2]f32
@@ -17,12 +19,22 @@ Framebuffer :: struct {
 ScreenVert :: struct {
 	pos: Vec2,
 	z:   f32,
+	uv:  [2]f32,
+}
+
+Tri :: struct {
+	v, vt: [3]u32,
+	n:     Vec3,
+	col:   Color,
 }
 
 Mesh :: struct {
-	verts: []Vec3,
-	tris:  [][3]u32,
-	col:   []Color,
+	verts:   []Vec3,
+	normals: []Vec3,
+	uvs:     []Vec2,
+	tris:    []Tri,
+	tri_col: []Color,
+	img:     rl.Image,
 }
 
 MeshInstance :: struct {

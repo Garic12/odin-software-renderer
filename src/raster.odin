@@ -102,13 +102,13 @@ draw_instance :: proc(fb: ^Framebuffer, inst: ^MeshInstance, view_proj: ^Mat4) {
 	}
 
 	for tri, i in inst.mesh.tris {
-		a := screen_verts[tri.x - 1]
-		b := screen_verts[tri.y - 1]
-		c := screen_verts[tri.z - 1]
+		a := screen_verts[tri.v[0] - 1]
+		b := screen_verts[tri.v[1] - 1]
+		c := screen_verts[tri.v[2] - 1]
 
 		if (a.z < 0 || b.z < 0 || c.z < 0) do continue
 
-		draw_tri(fb, a, b, c, inst.mesh.col[i])
+		draw_tri(fb, a, b, c, inst.mesh.tri_col[i])
 	}
 }
 

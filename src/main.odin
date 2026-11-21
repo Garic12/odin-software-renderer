@@ -52,19 +52,12 @@ main :: proc() {
 	fb := make_framebuffer(W_WIDTH, W_HEIGHT)
 	defer destroy_framebuffer(&fb)
 
-	cube, ok_cube := load_mesh_from_obj("./objects/cube.obj")
+	obj, ok_cube := load_mesh_from_obj("car4")
 	if !ok_cube do return
-	defer destroy_mesh(&cube)
-
-	plane, ok_plane := load_mesh_from_obj("./objects/plane.obj")
-	if !ok_plane do return
-	defer destroy_mesh(&plane)
+	defer destroy_mesh(&obj)
 
 	// Instance creation
-	inst := make_instance(&cube, Vec3{-2, 0, 0}, 0.5)
-	inst2 := make_instance(&cube, Vec3{2, 0, 0}, 0.5)
-
-	inst3 := make_instance(&plane, Vec3{0, 0, -1}, 1)
+	inst := make_instance(&obj, Vec3{-2, 0, 0}, 0.5)
 
 	// Cam setup
 	cam: Cam
@@ -77,7 +70,7 @@ main :: proc() {
 	input := Input{}
 
 
-	rl.SetTargetFPS(60)
+	rl.SetTargetFPS(10)
 	for {
 		if rl.WindowShouldClose() {break}
 		dt := rl.GetFrameTime()
@@ -108,8 +101,6 @@ main :: proc() {
 		clear_framebuffer(&fb)
 		draw_xyz(&fb, &view_proj)
 		draw_instance(&fb, &inst, &view_proj)
-		draw_instance(&fb, &inst2, &view_proj)
-		draw_instance(&fb, &inst3, &view_proj)
 
 		rl.UpdateTexture(tex, raw_data(fb.color))
 
